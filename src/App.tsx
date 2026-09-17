@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import * as pako from 'pako';
-import { createExtractorFromData } from 'node-unrar-js/esm';
 import wasmUrl from 'node-unrar-js/esm/js/unrar.wasm?url';
 
 // Types
@@ -208,11 +207,13 @@ export default function App() {
 
   const extractRar = async (file: File): Promise<ExtractedArchive> => {
     try {
+      // Dynamic import to avoid bundling Node.js modules in browser
+      const { createExtractorFromData } = await import('node-unrar-js/esm');
+      
       const arrayBuffer = await file.arrayBuffer();
       
-      // Load WASM binary
-      const wasmResponse = await fetch(wasmUrl);
-      const wasmBinary = await wasmResponse.arrayBuffer();
+      // Load WASM binary using the imported URL
+      const wasmBinary = await fetch(wasmUrl).then(r => r.arrayBuffer());
       
       const extractor = await createExtractorFromData({ 
         data: arrayBuffer,
